@@ -33,6 +33,7 @@ public class TextBuddy {
 	private PrintWriter _writer;
 	private Scanner _scanner;
 	private Boolean _isExitCalled = false;
+	private String _output = null; //trace system.out for testing
 
 	// Encoding used by PrintWriter
 	final String CHAR_ENCODING = "UTF-8";
@@ -46,12 +47,14 @@ public class TextBuddy {
 	static final String MSG_SORT_CONFIRM = "All content sorted for ";
 	static final String MSG_EMPTY = " is empty.";
 	static final String MSG_COMMAND = "Command: ";
+	static final String MSG_NO_MATCH = "No match found";
 	
 	static final String MSG_ERR_NOTHING_TO_SORT = "Error: No contents to sort";
 	static final String MSG_ERR_MISSING_FILE_NAME = "Error: Missing output file name.";
 	static final String MSG_ERR_CANNOT_WRITE_FILE = "Error: File is not writable.";
 	static final String MSG_ERR_UNSUPPORTED_ENCODING = "Error: Encoding is not supported - ";
 	static final String MSG_ERR_NON_INTEGER_INPUT = "Error: Invalid input. Input must be an integer.";
+	static final String MSG_ERR_INVALID_INPUT = "Error: Invalid input. Input is empty.";
 	static final String MSG_ERR_INVALID_COMMAND = "Error: Invalid Command";
 	static final String MSG_ERR_UNABLE_READ_FILE = "Error: Unable to read file";
 	static final String MSG_ERR_INVALID_LINE_NUM = "Error: Invalid line number";
@@ -69,35 +72,36 @@ public class TextBuddy {
 	static final String COMMAND_INVALID = "invalid";
 
 	// Constructor
-	public TextBuddy(String outputPath) {
-		_fileName = outputPath;
+	public TextBuddy(String[] args) {
+		//Validate input
+		if (args.length == 0) {
+			handleException(new FileNotFoundException(), MSG_ERR_MISSING_FILE_NAME);
+			return;
+		}
+		if (args[0].isEmpty()) {
+			handleException(new FileNotFoundException(), MSG_ERR_MISSING_FILE_NAME);
+			return;
+		}
+		_fileName = args[0];
 		_scanner = new Scanner(System.in);
+		
+		// Execution of TextBuddy
 	}
 
 	// Main Method
 	public static void main(String[] args) {
-		TextBuddy textBuddy = createTextBuddy(args);
+		TextBuddy textBuddy = new TextBuddy(args);
 		textBuddy.createOutputFile();
 		textBuddy.runCommandTillExit();
 		textBuddy.closeTextBuddy();
 	}
 
-	// Helper Methods
-	private static TextBuddy createTextBuddy(String[] args) {
-		try {
-			TextBuddy textBuddy = new TextBuddy(args[0]);
-			return textBuddy;
-		} catch (Exception e) {
-			handleException(e, MSG_ERR_MISSING_FILE_NAME);
-			return null;
-		}
-	}
-
-	private void createOutputFile() {
+	public void createOutputFile() {
 		try {
 			PrintWriter writer = new PrintWriter(_fileName, CHAR_ENCODING);
 			_writer = writer;
 			System.out.println(MSG_WELCOME + _fileName + MSG_READY);
+			_output = MSG_WELCOME + _fileName + MSG_READY;
 		} catch (FileNotFoundException e) {
 			handleException(e, MSG_ERR_CANNOT_WRITE_FILE);
 		} catch (UnsupportedEncodingException e) {
@@ -105,7 +109,7 @@ public class TextBuddy {
 		}
 	}
 
-	private void runCommandTillExit() {
+	public void runCommandTillExit() {
 		String commandText = null;
 
 		while (!_isExitCalled) {
@@ -115,7 +119,7 @@ public class TextBuddy {
 
 	}
 
-	private void closeTextBuddy() {
+	public void closeTextBuddy() {
 		// Close all resources
 		_writer.close();
 	}
@@ -141,7 +145,7 @@ public class TextBuddy {
 	 * 
 	 * @param commandText
 	 */
-	private void runCommand(String commandText) {
+	public void runCommand(String commandText) {
 		
 		String keyWord = getKeyWord(commandText);
 		
@@ -176,6 +180,7 @@ public class TextBuddy {
 
 	}
 	
+	// Helper Methods
 	private String getKeyWord(String commandText) {
 		
 		if (commandText.isEmpty()) {
@@ -188,9 +193,17 @@ public class TextBuddy {
 	private void addLine(String commandText) {
 		try {
 			String textAdded = commandText.substring(COMMAND_ADD.length() + 1);
+			
+			if (checkEmptyInput(textAdded)) {
+				handleError(MSG_ERR_INVALID_INPUT);
+				return;
+			}
+			
 			_writer.println(textAdded);
 			_writer.flush();
 			System.out.println(MSG_ADD + _fileName + ": \"" + textAdded + "\"");
+			_output = MSG_ADD + _fileName + ": \"" + textAdded + "\"";
+			
 		} catch (IndexOutOfBoundsException e) {
 			handleError(MSG_ERR_INVALID_COMMAND);
 		}
@@ -210,13 +223,18 @@ public class TextBuddy {
 			// Check if file is empty
 			if (line == null) {
 				System.out.println(_fileName + MSG_EMPTY);
+				_output = _fileName + MSG_EMPTY;
+				return;
 			}
 
+			_output = "";
 			while (line != null) {
 				System.out.println(lineNumber + ": " + line);
+				_output = _output + ", " + lineNumber + ": " + line;
 				lineNumber++;
 				line = bufferedDataFile.readLine();
 			}
+			_output = _output.substring(2);
 
 			// Close when done.
 			bufferedDataFile.close();
@@ -233,6 +251,7 @@ public class TextBuddy {
 			_writer = new PrintWriter(_fileName, CHAR_ENCODING);
 			if (confirmation) {
 				System.out.println(MSG_DELETE_CONFIRM + _fileName);
+				_output = MSG_DELETE_CONFIRM + _fileName;
 			}
 		} catch (FileNotFoundException e) {
 			handleException(e, MSG_ERR_CANNOT_WRITE_FILE);
@@ -282,8 +301,8 @@ public class TextBuddy {
 			if (deletedLine == null) {
 				handleError(MSG_ERR_INVALID_LINE_NUM);
 			} else {
-				System.out.println(MSG_DELETE + _fileName + ": " + "\""
-						+ deletedLine + "\"");
+				System.out.println(MSG_DELETE + _fileName + ": " + "\"" + deletedLine + "\"");
+				_output = MSG_DELETE + _fileName + ": " + "\"" + deletedLine + "\"";
 			}
 
 		} catch (FileNotFoundException e) {
@@ -294,7 +313,7 @@ public class TextBuddy {
 			handleException(e, MSG_ERR_IO_EXCEPTION);
 		} catch (NumberFormatException e) {
 			// Invalid input for line number
-			handleException(e, MSG_ERR_NON_INTEGER_INPUT);
+			handleError(MSG_ERR_NON_INTEGER_INPUT);
 		}
 
 	}
@@ -319,14 +338,15 @@ public class TextBuddy {
 				handleError(MSG_ERR_NOTHING_TO_SORT);
 			}
 			else {
-				Collections.sort(content);
+				Collections.sort(content, String.CASE_INSENSITIVE_ORDER);
 				clearFile(false);
 				for (String s : content) {
 					_writer.println(s);
 				}
 				_writer.flush();
 				if (confirmation) {
-					System.out.println(MSG_SORT_CONFIRM);
+					System.out.println(MSG_SORT_CONFIRM + _fileName);
+					_output = MSG_SORT_CONFIRM + _fileName;
 				}	
 			}
 			
@@ -344,17 +364,17 @@ public class TextBuddy {
 		
 	}
 	
-	// The search function will not accept null input. Input is not case-sensitive.
+	// The search function will not accept null input. Input is case-insensitive.
 	private void search(String commandText) {
 		
 		try {
 			// Validate command and setup match terms.
 			String searchTerm = commandText.substring(COMMAND_SEARCH.length() + 1);
-			if (searchTerm.isEmpty()) {
-				handleError(MSG_ERR_INVALID_COMMAND);
+			if (checkEmptyInput(searchTerm)) {
+				handleError(MSG_ERR_INVALID_INPUT);
 				return;
 			}
-			searchTerm = "\\b" + searchTerm + "\\b";
+			searchTerm = "\\b" + searchTerm.toLowerCase() + "\\b";
 			Pattern match = Pattern.compile(searchTerm);
 			Matcher matcher;
 			
@@ -368,7 +388,7 @@ public class TextBuddy {
 			
 			// Read through file for matching content
 			while (line != null) {
-				matcher = match.matcher(line);
+				matcher = match.matcher(line.toLowerCase());
 				if (matcher.find()) {
 					lineNumbered = lineNumber + ": " + line;
 					matchingContent.add(lineNumbered);
@@ -378,8 +398,17 @@ public class TextBuddy {
 			}
 			
 			// Display matching content
-			for (String s : matchingContent) {
-				System.out.println(s);
+			if (matchingContent.isEmpty()) {
+				System.out.println(MSG_NO_MATCH);
+				_output = MSG_NO_MATCH;
+			}
+			else {
+				_output = "";
+				for (String s : matchingContent) {
+					System.out.println(s);
+					_output = _output + ", " + s;
+				}
+				_output = _output.substring(2);
 			}
 			
 			// Close when done
@@ -395,18 +424,32 @@ public class TextBuddy {
 		}
 	}
 	
+	private Boolean checkEmptyInput(String input) {
+		input = input.trim();
+		if (input.isEmpty()) {
+			return true;
+		}
+		return false;
+	}
+	
 	// Do not terminate errors.
-	private static void handleError(String error) {
+	private void handleError(String error) {
 		System.out.println(error);
+		_output = error;
 	}
 
 	// Always terminate errors.
-	private static void handleException(Exception e, String error) {
+	private void handleException(Exception e, String error) {
 		if (e != null) {
 			e.printStackTrace();
 		}
 		System.out.println(error);
+		_output = error;
 		System.exit(1);
 	}
-
+	
+	// Test Functions
+	String getOut() {
+		return _output;
+	}
 }
