@@ -7,7 +7,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Scanner;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * The TextBuddy program helps to write the user's input into a text file where
@@ -16,7 +19,7 @@ import java.util.Scanner;
  * contents will be updated and saved upon each command.
  * 
  * Currently supported commands: (Case-sensitive) exit, clear, display, add
- * <String>, delete <Integer>
+ * <String>, delete <Integer>, sort, search <String>
  * 
  * Assuming TextBuddy only writes text, it is safe to use a PrintWriter for the
  * writing into output file.
@@ -40,9 +43,11 @@ public class TextBuddy {
 	static final String MSG_DELETE_CONFIRM = "All content deleted from ";
 	static final String MSG_ADD = "Added to ";
 	static final String MSG_DELETE = "Delete from ";
+	static final String MSG_SORT_CONFIRM = "All content sorted for ";
 	static final String MSG_EMPTY = " is empty.";
 	static final String MSG_COMMAND = "Command: ";
 	
+	static final String MSG_ERR_NOTHING_TO_SORT = "Error: No contents to sort";
 	static final String MSG_ERR_MISSING_FILE_NAME = "Error: Missing output file name.";
 	static final String MSG_ERR_CANNOT_WRITE_FILE = "Error: File is not writable.";
 	static final String MSG_ERR_UNSUPPORTED_ENCODING = "Error: Encoding is not supported - ";
@@ -56,6 +61,8 @@ public class TextBuddy {
 	// Commands
 	static final String COMMAND_ADD = "add";
 	static final String COMMAND_DELETE = "delete";
+	static final String COMMAND_SORT = "sort";
+	static final String COMMAND_SEARCH = "search";
 	static final String COMMAND_DISPLAY = "display";
 	static final String COMMAND_CLEAR = "clear";
 	static final String COMMAND_EXIT = "exit";
@@ -130,7 +137,7 @@ public class TextBuddy {
 	/**
 	 * Currently supported commands: (Case-Sensitive)
 	 * 
-	 * exit, clear, display, add <String>, delete <Integer>
+	 * exit, clear, display, add <String>, delete <Integer>, sort, search <String>
 	 * 
 	 * @param commandText
 	 */
@@ -145,11 +152,17 @@ public class TextBuddy {
 			case COMMAND_DELETE : 	deleteLine(commandText);
 									break;
 									
+			case COMMAND_SORT : 	sortContent(true);
+									System.out.println(MSG_SORT_CONFIRM + _fileName);
+									break;
+									
+			case COMMAND_SEARCH : 	search(commandText);
+									break;
+									
 			case COMMAND_DISPLAY : 	displayText();
 									break;
 									
-			case COMMAND_CLEAR : 	clearFile();
-									System.out.println(MSG_DELETE_CONFIRM + _fileName);
+			case COMMAND_CLEAR : 	clearFile(true);
 									break;
 									
 			case COMMAND_EXIT : 	_isExitCalled = true;
@@ -162,34 +175,6 @@ public class TextBuddy {
 									break;
 		}
 
-//		// Command: exit
-//		if (commandText.equals("exit")) {
-//			_isExitCalled = true;
-//		}
-//		// Command: clear
-//		else if (commandText.equals("clear")) {
-//			clearFile();
-//			System.out.println(MSG_DELETE_CONFIRM + _fileName);
-//		}
-//		// Command: display
-//		else if (commandText.equals("display")) {
-//			displayText();
-//		}
-//		// Command: add
-//		else if (commandText.substring(0, 4).equals("add ")) {
-//			addLine(commandText);
-//		}
-//		// Command: delete
-//		else if (commandText.substring(0, 7).equals("delete ")) {
-//			try {
-//				int lineNumber = Integer.parseInt(commandText.substring(7));
-//				deleteLine(lineNumber);
-//			} catch (Exception e) {
-//				handleException(e, MSG_ERR_NON_INTEGER_INPUT);
-//			}
-//		} else {
-//			handleError(MSG_ERR_INVALID_COMMAND);
-//		}
 	}
 	
 	private String getKeyWord(String commandText) {
@@ -197,8 +182,7 @@ public class TextBuddy {
 		if (commandText.isEmpty()) {
 			return COMMAND_INVALID;
 		}
-		// Split string into 2 and return the first word
-		String[] keyWord = commandText.split(" ", 2);
+		String[] keyWord = commandText.split(" ");
 		return keyWord[0];
 	}
 
@@ -220,6 +204,7 @@ public class TextBuddy {
 			FileReader dataFile = new FileReader(_fileName);
 			BufferedReader bufferedDataFile = new BufferedReader(dataFile);
 			String line = bufferedDataFile.readLine();
+			
 			// UI: Line Numbering
 			int lineNumber = 1;
 
@@ -235,8 +220,8 @@ public class TextBuddy {
 			}
 
 			// Close when done.
-			dataFile.close();
 			bufferedDataFile.close();
+			dataFile.close();
 
 		} catch (Exception e) {
 			// If file not found
@@ -244,9 +229,12 @@ public class TextBuddy {
 		}
 	}
 
-	private void clearFile() {
+	private void clearFile(Boolean confirmation) {
 		try {
 			_writer = new PrintWriter(_fileName, CHAR_ENCODING);
+			if (confirmation) {
+				System.out.println(MSG_DELETE_CONFIRM + _fileName);
+			}
 		} catch (FileNotFoundException e) {
 			handleException(e, MSG_ERR_CANNOT_WRITE_FILE);
 		} catch (UnsupportedEncodingException e) {
@@ -259,10 +247,11 @@ public class TextBuddy {
 		try {
 			// Get line number from input
 			int lineNumberToDelete = Integer.parseInt(commandText.substring(COMMAND_DELETE.length() + 1));
+			
 			// Read from the original file and add to ArrayList unless
 			// content matches data to be removed.
-			BufferedReader bufferedReader = new BufferedReader(new FileReader(
-					_fileName));
+			FileReader fileReader = new FileReader(_fileName);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
 			ArrayList<String> remainingStrings = new ArrayList<String>();
 			String deletedLine = null;
 			String line = bufferedReader.readLine();
@@ -280,7 +269,7 @@ public class TextBuddy {
 			}
 
 			// Clear file and add back edited content
-			clearFile();
+			clearFile(false);
 			for (String s : remainingStrings) {
 				_writer.println(s);
 			}
@@ -288,6 +277,7 @@ public class TextBuddy {
 
 			// Close when done
 			bufferedReader.close();
+			fileReader.close();
 
 			// Check if command is valid
 			if (deletedLine == null) {
@@ -308,6 +298,102 @@ public class TextBuddy {
 			handleException(e, MSG_ERR_NON_INTEGER_INPUT);
 		}
 
+	}
+	
+	private void sortContent(Boolean confirmation) {
+		
+		try {
+			//Open file
+			FileReader fileReader = new FileReader(_fileName);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			ArrayList<String> content = new ArrayList<String>();
+			String line = bufferedReader.readLine();
+			
+			//Read file to array
+			while (line != null) {
+				content.add(line);
+				line = bufferedReader.readLine();
+			}
+			
+			//Sort and replace file
+			if (content.isEmpty()) {
+				handleError(MSG_ERR_NOTHING_TO_SORT);
+			}
+			else {
+				Collections.sort(content);
+				clearFile(false);
+				for (String s : content) {
+					_writer.println(s);
+				}
+				_writer.flush();
+				if (confirmation) {
+					System.out.println(MSG_SORT_CONFIRM);
+				}	
+			}
+			
+			//Close when done
+			bufferedReader.close();
+			fileReader.close();
+			
+		} catch (FileNotFoundException e) {
+			// File not found
+			handleException(e, MSG_ERR_MISSING_FILE);
+		} catch (IOException e) {
+			// Cannot write to file
+			handleException(e, MSG_ERR_IO_EXCEPTION);
+		}
+		
+	}
+	
+	// The search function will not accept null input. Input is not case-sensitive.
+	private void search(String commandText) {
+		
+		try {
+			// Validate command and setup match terms.
+			String searchTerm = commandText.substring(COMMAND_SEARCH.length() + 1);
+			if (searchTerm.isEmpty()) {
+				handleError(MSG_ERR_INVALID_COMMAND);
+				return;
+			}
+			searchTerm = "\\b" + searchTerm + "\\b";
+			Pattern match = Pattern.compile(searchTerm);
+			Matcher matcher;
+			
+			// Open file
+			FileReader fileReader = new FileReader(_fileName);
+			BufferedReader bufferedReader = new BufferedReader(fileReader);
+			ArrayList<String> matchingContent = new ArrayList<String>();
+			String line = bufferedReader.readLine();
+			String lineNumbered = null;
+			int lineNumber = 1;
+			
+			// Read through file for matching content
+			while (line != null) {
+				matcher = match.matcher(line);
+				if (matcher.find()) {
+					lineNumbered = lineNumber + ": " + line;
+					matchingContent.add(lineNumbered);
+				}
+				lineNumber++;
+				line = bufferedReader.readLine();
+			}
+			
+			// Display matching content
+			for (String s : matchingContent) {
+				System.out.println(s);
+			}
+			
+			// Close when done
+			bufferedReader.close();
+			fileReader.close();
+			
+		} catch (FileNotFoundException e) {
+			// File not found
+			handleException(e, MSG_ERR_MISSING_FILE);
+		} catch (IOException e) {
+			// Cannot write to file
+			handleException(e, MSG_ERR_IO_EXCEPTION);
+		}
 	}
 	
 	// Do not terminate errors.
