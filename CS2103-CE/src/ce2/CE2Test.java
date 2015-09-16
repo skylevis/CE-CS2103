@@ -7,7 +7,7 @@ import org.junit.Test;
 public class CE2Test {
 
 	@Test
-	public void test() {
+	public void testCase01() {
 		fail("Not yet implemented");
 	}
 

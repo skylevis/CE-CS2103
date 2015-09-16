@@ -153,7 +153,6 @@ public class TextBuddy {
 									break;
 									
 			case COMMAND_SORT : 	sortContent(true);
-									System.out.println(MSG_SORT_CONFIRM + _fileName);
 									break;
 									
 			case COMMAND_SEARCH : 	search(commandText);
