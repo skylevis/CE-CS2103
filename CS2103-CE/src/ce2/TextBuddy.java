@@ -25,8 +25,7 @@ import java.util.Scanner;
  */
 public class TextBuddy {
 
-	// Member variables to store the output filename path, printWriter, scanner
-	// and the exit boolean.
+	// Private variables
 	private String _fileName;
 	private PrintWriter _writer;
 	private Scanner _scanner;
@@ -53,6 +52,14 @@ public class TextBuddy {
 	static final String MSG_ERR_INVALID_LINE_NUM = "Error: Invalid line number";
 	static final String MSG_ERR_MISSING_FILE = "Error: Missing file.";
 	static final String MSG_ERR_IO_EXCEPTION = "Error: IO exception.";
+	
+	// Commands
+	static final String COMMAND_ADD = "add";
+	static final String COMMAND_DELETE = "delete";
+	static final String COMMAND_DISPLAY = "display";
+	static final String COMMAND_CLEAR = "clear";
+	static final String COMMAND_EXIT = "exit";
+	static final String COMMAND_INVALID = "invalid";
 
 	// Constructor
 	public TextBuddy(String outputPath) {
@@ -105,12 +112,18 @@ public class TextBuddy {
 		// Close all resources
 		_writer.close();
 	}
-
+	
 	private String getNextCommand() {
+		
 		String commandText;
+		
+		// UI: Show user that app is ready to accept command.
 		System.out.println("");
 		System.out.print(MSG_COMMAND);
+		
+		// Listen for input
 		commandText = _scanner.nextLine();
+		
 		return commandText;
 	}
 
@@ -122,45 +135,80 @@ public class TextBuddy {
 	 * @param commandText
 	 */
 	private void runCommand(String commandText) {
+		
+		String keyWord = getKeyWord(commandText);
+		
+		switch(keyWord) {
+			case COMMAND_ADD : 		addLine(commandText);
+									break;
+									
+			case COMMAND_DELETE : 	deleteLine(commandText);
+									break;
+									
+			case COMMAND_DISPLAY : 	displayText();
+									break;
+									
+			case COMMAND_CLEAR : 	clearFile();
+									System.out.println(MSG_DELETE_CONFIRM + _fileName);
+									break;
+									
+			case COMMAND_EXIT : 	_isExitCalled = true;
+									break;
+									
+			case COMMAND_INVALID : 	handleError(MSG_ERR_INVALID_COMMAND);
+									break;
+									
+			default : 				handleError(MSG_ERR_INVALID_COMMAND);
+									break;
+		}
 
-		// Command: exit
-		if (commandText.equals("exit")) {
-			_isExitCalled = true;
+//		// Command: exit
+//		if (commandText.equals("exit")) {
+//			_isExitCalled = true;
+//		}
+//		// Command: clear
+//		else if (commandText.equals("clear")) {
+//			clearFile();
+//			System.out.println(MSG_DELETE_CONFIRM + _fileName);
+//		}
+//		// Command: display
+//		else if (commandText.equals("display")) {
+//			displayText();
+//		}
+//		// Command: add
+//		else if (commandText.substring(0, 4).equals("add ")) {
+//			addLine(commandText);
+//		}
+//		// Command: delete
+//		else if (commandText.substring(0, 7).equals("delete ")) {
+//			try {
+//				int lineNumber = Integer.parseInt(commandText.substring(7));
+//				deleteLine(lineNumber);
+//			} catch (Exception e) {
+//				handleException(e, MSG_ERR_NON_INTEGER_INPUT);
+//			}
+//		} else {
+//			handleError(MSG_ERR_INVALID_COMMAND);
+//		}
+	}
+	
+	private String getKeyWord(String commandText) {
+		
+		if (commandText.isEmpty()) {
+			return COMMAND_INVALID;
 		}
-		// Command: clear
-		else if (commandText.equals("clear")) {
-			clearFile();
-			System.out.println(MSG_DELETE_CONFIRM + _fileName);
-		}
-		// Command: display
-		else if (commandText.equals("display")) {
-			displayText();
-		}
-		// Command: add
-		else if (commandText.substring(0, 4).equals("add ")) {
-			addLine(commandText);
-		}
-		// Command: delete
-		else if (commandText.substring(0, 7).equals("delete ")) {
-			try {
-				int lineNumber = Integer.parseInt(commandText.substring(7));
-				deleteLine(lineNumber);
-			} catch (Exception e) {
-				handleException(e, MSG_ERR_NON_INTEGER_INPUT);
-			}
-		} else {
-			handleError(MSG_ERR_INVALID_COMMAND);
-		}
+		// Split string into 2 and return the first word
+		String[] keyWord = commandText.split(" ", 2);
+		return keyWord[0];
 	}
 
 	private void addLine(String commandText) {
 		try {
-			String textAdded = commandText.substring(4);
+			String textAdded = commandText.substring(COMMAND_ADD.length() + 1);
 			_writer.println(textAdded);
 			_writer.flush();
-			System.out.println(MSG_ADD + _fileName + ": \"" + textAdded
-					+ "\"");
-		} catch (Exception e) {
+			System.out.println(MSG_ADD + _fileName + ": \"" + textAdded + "\"");
+		} catch (IndexOutOfBoundsException e) {
 			handleError(MSG_ERR_INVALID_COMMAND);
 		}
 	}
@@ -172,6 +220,7 @@ public class TextBuddy {
 			FileReader dataFile = new FileReader(_fileName);
 			BufferedReader bufferedDataFile = new BufferedReader(dataFile);
 			String line = bufferedDataFile.readLine();
+			// UI: Line Numbering
 			int lineNumber = 1;
 
 			// Check if file is empty
@@ -205,9 +254,11 @@ public class TextBuddy {
 		}
 	}
 
-	private void deleteLine(int lineNumberToDelete) {
-
+	private void deleteLine(String commandText) {
+				
 		try {
+			// Get line number from input
+			int lineNumberToDelete = Integer.parseInt(commandText.substring(COMMAND_DELETE.length() + 1));
 			// Read from the original file and add to ArrayList unless
 			// content matches data to be removed.
 			BufferedReader bufferedReader = new BufferedReader(new FileReader(
@@ -250,7 +301,11 @@ public class TextBuddy {
 			// File not found
 			handleException(e, MSG_ERR_MISSING_FILE);
 		} catch (IOException e) {
+			// Cannot write to file
 			handleException(e, MSG_ERR_IO_EXCEPTION);
+		} catch (NumberFormatException e) {
+			// Invalid input for line number
+			handleException(e, MSG_ERR_NON_INTEGER_INPUT);
 		}
 
 	}
