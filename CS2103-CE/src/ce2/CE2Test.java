@@ -67,20 +67,26 @@ public class CE2Test {
 		
 		return match;
 	}
-
+	
+	//Test Cases
 	@Test
 	public void testAddFunction() throws Exception {
+		
+		// Setup TextBuddy
 		String fileName = "testAddFunction.txt";
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
 		textBuddy.createOutputFile();
+		
 		textBuddy.runCommand("add nyancat");
+		//Test for empty input
 		textBuddy.runCommand("add  ");
 		assertTrue("Expected: " + MSG_ERR_INVALID_INPUT + ", Actual: " + textBuddy.getOut(), 
 					MSG_ERR_INVALID_INPUT.equals(textBuddy.getOut()));
 		textBuddy.runCommand("add putin");
 		textBuddy.closeTextBuddy();
 		
+		// Compare results with expected
 		ArrayList<String> expected = new ArrayList<String>();
 		expected.add("nyancat");
 		expected.add("putin");
@@ -89,19 +95,26 @@ public class CE2Test {
 	
 	@Test
 	public void testDisplayFunction() throws Exception {
+
+		// Setup TextBuddy
 		String fileName = "testDisplayFunction.txt";
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
 		textBuddy.createOutputFile();
+		
+		// Test for empty display
 		textBuddy.runCommand("display");
 		assertTrue("Expected: " + fileName + MSG_EMPTY + ", Actual: " + textBuddy.getOut(), 
 					(fileName + MSG_EMPTY).equals(textBuddy.getOut()));
+		
+		// Test for normal display
 		textBuddy.runCommand("add william");
 		textBuddy.runCommand("add lukA");
 		textBuddy.runCommand("add eDen");
 		textBuddy.runCommand("add Hildegard");
 		textBuddy.closeTextBuddy();
 		
+		// Compare results with expected
 		ArrayList<String> expected = new ArrayList<String>();
 		expected.add("william");
 		expected.add("lukA");
@@ -112,10 +125,19 @@ public class CE2Test {
 	
 	@Test
 	public void testClearFunction() throws Exception {
+		
+		// Setup TextBuddy
 		String fileName = "testClearFunction.txt";
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
 		textBuddy.createOutputFile();
+		
+		// Test clear for empty file
+		textBuddy.runCommand("clear");
+		assertTrue("Expected: " + MSG_DELETE_CONFIRM + fileName + ", Actual: " + textBuddy.getOut(), 
+					(MSG_DELETE_CONFIRM + fileName).equals(textBuddy.getOut()));
+		
+		// Test clear for non-empty file
 		textBuddy.runCommand("add william");
 		textBuddy.runCommand("add lukA");
 		textBuddy.runCommand("add eDen");
@@ -125,17 +147,21 @@ public class CE2Test {
 					(MSG_DELETE_CONFIRM + fileName).equals(textBuddy.getOut()));
 		textBuddy.closeTextBuddy();
 		
+		// Compare results with expected
 		ArrayList<String> expected = new ArrayList<String>();
 		assertTrue(compareFile(fileName, expected));
 	}
 	
 	@Test
 	public void testDeleteFunction() throws Exception {
+		
+		// Setup TextBuddy
 		String fileName = "testClearFunction.txt";
 		String expectedOut = null;
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
 		
+		// Test delete function
 		textBuddy.createOutputFile();
 		textBuddy.runCommand("add william");
 		textBuddy.runCommand("add lukA");
@@ -143,6 +169,8 @@ public class CE2Test {
 		textBuddy.runCommand("add Hildegard");
 		textBuddy.runCommand("add Yuri");
 		textBuddy.runCommand("add ViTos");
+		
+		// Test delete function with invalid inputs
 		textBuddy.runCommand("delete -1");
 		assertTrue("Expected: " + MSG_ERR_INVALID_LINE_NUM + ", Actual: " + textBuddy.getOut(), 
 					(MSG_ERR_INVALID_LINE_NUM).equals(textBuddy.getOut()));
@@ -151,6 +179,7 @@ public class CE2Test {
 		assertTrue("Expected: " + MSG_ERR_INVALID_LINE_NUM + ", Actual: " + textBuddy.getOut(), 
 					(MSG_ERR_INVALID_LINE_NUM).equals(textBuddy.getOut()));
 		
+		// Test delete function with valid inputs
 		textBuddy.runCommand("delete 3");
 		textBuddy.runCommand("display");
 		expectedOut = "1: william, 2: lukA, 3: Hildegard, 4: Yuri, 5: ViTos";
@@ -168,15 +197,19 @@ public class CE2Test {
 	
 	@Test
 	public void testSortFunction() throws Exception {
+		
+		// Setup TextBuddy
 		String fileName = "testSortFunction.txt";
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
-		
 		textBuddy.createOutputFile();
+		
+		// Test sort on empty file
 		textBuddy.runCommand("sort");
 		assertTrue("Expected: " + MSG_ERR_NOTHING_TO_SORT + ", Actual: " + textBuddy.getOut(), 
 					MSG_ERR_NOTHING_TO_SORT.equals(textBuddy.getOut()));
 		
+		// Test sort on non-empty file
 		textBuddy.runCommand("add I have searched for good documentation on these methods, but haven't found anything.");
 		textBuddy.runCommand("add I think I see what was confusing me.");
 		textBuddy.runCommand("add so that the message would print out and tell me WHY it failed.");
@@ -185,7 +218,9 @@ public class CE2Test {
 		textBuddy.runCommand("add I'm pretty new to Java.");
 		textBuddy.runCommand("sort");
 		textBuddy.runCommand("display");
+		textBuddy.closeTextBuddy();
 		
+		// Compare results with expected
 		ArrayList<String> expected = new ArrayList<String>();
 		expected.add("assertTrue as well as assertFalse display the string when the second parameter evaluates to false.");
 		expected.add("Book was already checked out.");
@@ -198,12 +233,15 @@ public class CE2Test {
 	
 	@Test
 	public void testSearchFunction() throws Exception {
+		
+		// Setup TextBuddy
 		String fileName = "testSearchFunction.txt";
 		String expectedOut = null;
 		String[] argument = {fileName};
 		TextBuddy textBuddy = new TextBuddy(argument);
-		
 		textBuddy.createOutputFile();		
+		
+		// Test for case-insensitive search
 		textBuddy.runCommand("add I have searched for good documentation on these methods, but haven't found anything.");
 		textBuddy.runCommand("add I think I see what was confusing me.");
 		textBuddy.runCommand("add so that the message would print out and tell me WHY it failed.");
@@ -215,12 +253,19 @@ public class CE2Test {
 		assertTrue("Expected: " + expectedOut + ", Actual: " + textBuddy.getOut(), 
 					expectedOut.equals(textBuddy.getOut()));
 		
+		// Test search for non-empty expected output
 		textBuddy.runCommand("search I");
 		expectedOut = "1: I have searched for good documentation on these methods, but haven't found anything."
 						+ ", 2: I think I see what was confusing me."
 						+ ", 6: I'm pretty new to Java.";
 		assertTrue("Expected: " + expectedOut + ", Actual: " + textBuddy.getOut(), 
 					expectedOut.equals(textBuddy.getOut()));
+		
+		// Test search for empty expected output
+		textBuddy.runCommand("search non-existant");
+		textBuddy.closeTextBuddy();
+		assertTrue("Expected: " + MSG_NO_MATCH + ", Actual: " + textBuddy.getOut(), 
+					MSG_NO_MATCH.equals(textBuddy.getOut()));
 
 	}
 }
