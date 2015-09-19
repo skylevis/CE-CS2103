@@ -21,8 +21,12 @@ import java.util.regex.Pattern;
  * Currently supported commands: (Case-sensitive) exit, clear, display, add
  * <String>, delete <Integer>, sort, search <String>
  * 
- * Assuming TextBuddy only writes text, it is safe to use a PrintWriter for the
- * writing into output file.
+ * Assumptions: TextBuddy only writes text, it is safe to use a PrintWriter for the
+ * 				writing into output file.
+ * 				Sort() is case-insensitive.
+ * 				Search() is case-insensitive.
+ * 				Search() only works for exact match.
+ * 				Blank space is considered empty input.
  * 
  * @author SeeSK
  */
@@ -85,7 +89,6 @@ public class TextBuddy {
 		_fileName = args[0];
 		_scanner = new Scanner(System.in);
 		
-		// Execution of TextBuddy
 	}
 
 	// Main Method
